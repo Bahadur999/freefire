@@ -16,7 +16,7 @@ def run_flask():
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
 
-# ЖАҢА БОТ ТОКЕНІ:
+# Бот токені
 API_TOKEN = '8869812841:AAHm8uPi6ghO_LLt3eZWYAMyLrvAalzhWks'
 bot = telebot.TeleBot(API_TOKEN)
 
@@ -35,7 +35,7 @@ def send_welcome(message):
     notify_admin(message.from_user, "Старт басты")
     bot.reply_to(
         message, 
-        "Салам алейкум! 🎮 Free Fire Check Bot-қа кош келдіңіз!\n\n"
+        "Салам алейкум! 🎮 Free Fire Check Bot-қа қош келдіңіз!\n\n"
         "Маған Free Fire аккаунтының **ID-ін (UID)** жіберіңіз, мен ол туралы толық ақпаратты тауып беремін!"
     )
 
@@ -44,46 +44,55 @@ def send_welcome(message):
 def handle_ff_id(message):
     ff_id = message.text.strip()
     notify_admin(message.from_user, f"FF ID іздеді: {ff_id}")
-    status_msg = bot.reply_to(message, "🔎 Free Fire аккаунты тексерілуде...")
+    status_msg = bot.reply_to(message, "🔎 Free Fire базасынан ізделуде...")
 
-    # РЕЗЕРВТІК АШЫҚ API-ЛЕР ТІЗІМІ
+    # ӘРТҮРЛІ РЕЗЕРВТІК API-ЛЕР ТІЗІМІ
     api_urls = [
         f"https://free-fire-api-five.vercel.app/api/ff_info?uid={ff_id}",
-        f"https://api.vyturex.com/ff?id={ff_id}",
-        f"https://region-info-ff.vercel.app/api/info?uid={ff_id}"
+        f"https://api.zone-x.in/ff_info?uid={ff_id}",
+        f"https://region-info-ff.vercel.app/api/info?uid={ff_id}",
+        f"https://api.vyturex.com/ff?id={ff_id}"
     ]
 
-    data = None
+    nickname, level, region, likes, created_at = None, None, None, None, None
 
     for url in api_urls:
         try:
             res = requests.get(url, timeout=5).json()
-            if "basicInfo" in res or "nickname" in res or "AccountName" in res or "name" in res:
-                data = res
+            
+            # API форматына қарай деректерді алу
+            if "basicInfo" in res:
+                info = res["basicInfo"]
+                nickname = info.get("nickname")
+                level = info.get("level")
+                region = info.get("region")
+                likes = info.get("likes")
+                created_at = info.get("createAt")
+            elif "AccountName" in res or "name" in res or "nickname" in res:
+                nickname = res.get("AccountName") or res.get("nickname") or res.get("name")
+                level = res.get("AccountLevel") or res.get("level")
+                region = res.get("AccountRegion") or res.get("region")
+                likes = res.get("AccountLikes") or res.get("likes")
+                created_at = res.get("AccountCreateTime") or res.get("created_at")
+
+            if nickname:
                 break
-        except Exception as e:
+        except Exception:
             continue
 
-    if data:
-        info = data.get("basicInfo", data)
-        nickname = info.get("nickname") or info.get("AccountName") or info.get("name") or "Белгісіз"
-        level = info.get("level") or info.get("AccountLevel") or "Белгісіз"
-        region = info.get("region") or info.get("AccountRegion") or "Белгісіз"
-        likes = info.get("likes") or info.get("AccountLikes") or "0"
-        created_at = info.get("createAt") or info.get("AccountCreateTime") or info.get("created_at") or "Белгісіз"
-
+    if nickname:
         text = (
             f"🔥 **Free Fire Аккаунт Инфо:**\n\n"
             f"👤 **Никнейм:** `{nickname}`\n"
             f"🆔 **UID:** `{ff_id}`\n"
-            f"📊 **Деңгей (Level):** {level}\n"
-            f"❤️ **Лайк саны:** {likes}\n"
-            f"🌍 **Регион:** {region}\n"
-            f"📅 **Ашылған күні:** `{created_at}`"
+            f"📊 **Деңгей (Level):** {level if level else 'Белгісіз'}\n"
+            f"❤️ **Лайк саны:** {likes if likes else '0'}\n"
+            f"🌍 **Регион:** {region if region else 'Белгісіз'}\n"
+            f"📅 **Ашылған күні:** `{created_at if created_at else 'Белгісіз'}`"
         )
         bot.edit_message_text(text, message.chat.id, status_msg.message_id, parse_mode="Markdown")
     else:
-        bot.edit_message_text("❌ Аккаунт табылмады немесе бұл ID бойынша мәлімет ашық емес. ID-ді тексеріп қайта жіберіңіз!", message.chat.id, status_msg.message_id)
+        bot.edit_message_text("❌ Аккаунт табылмады. ID-ді дұрыс жазғаныңызды тексеріп, қайта жіберіңіз!", message.chat.id, status_msg.message_id)
 
 @bot.message_handler(func=lambda message: True)
 def handle_other(message):
@@ -100,4 +109,4 @@ if __name__ == '__main__':
         except Exception as e:
             print(f"Polling қатесі: {e}")
             time.sleep(3)
-        
+                
