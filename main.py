@@ -17,7 +17,7 @@ def run_flask():
     app.run(host="0.0.0.0", port=port)
 
 # ЖАҢА БОТ ТОКЕНІН ОСЫНДА ҚОЙЫҢЫЗ:
-API_TOKEN = 'ЖАҢА_ТОКЕНДІ_ОСЫНДА_ҚОЙЫҢЫЗ'
+API_TOKEN = '8869812841:AAHm8uPi6ghO_LLt3eZWYAMyLrvAalzhWks'
 bot = telebot.TeleBot(API_TOKEN)
 
 # Өзіңіздің Telegram ID-іңіз
