@@ -5,7 +5,7 @@ from flask import Flask
 import requests
 import telebot
 
-# Web-сервер (Render/Koyeb өшіп қалмауы үшін)
+# Web-сервер (Render/UptimeRobot өшіп қалмауы үшін)
 app = Flask(__name__)
 
 @app.route('/')
@@ -16,11 +16,11 @@ def run_flask():
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
 
-# ЖАҢА БОТ ТОКЕНІН ОСЫНДА ҚОЙЫҢЫЗ:
-API_TOKEN = '8869812841:AAHm8uPi6ghO_LLt3eZWYAMyLrvAalzhWks'
+# Бот токені
+API_TOKEN = '8979883320:AAFUdoyQF7EJwAxd-1ioospdEG56R6MXI_4'
 bot = telebot.TeleBot(API_TOKEN)
 
-# Өзіңіздің Telegram ID-іңіз
+# Админ ID
 ADMIN_ID = 5732227994
 
 def notify_admin(user, action_text):
@@ -47,19 +47,21 @@ def handle_ff_id(message):
     notify_admin(message.from_user, f"FF ID іздеді: {ff_id}")
     status_msg = bot.reply_to(message, "🔎 Free Fire аккаунты тексерілуде...")
 
-    # Free Fire API
-    api_url = f"https://free-fire-api-five.vercel.app/api/ff_info?uid={ff_id}"
+    # Сенімді Free Fire API
+    api_url = f"https://api.zone-x.in/ff_info?uid={ff_id}"
 
     try:
         res = requests.get(api_url, timeout=10).json()
         
-        if "basicInfo" in res:
-            info = res["basicInfo"]
-            nickname = info.get("nickname", "Белгісіз")
-            level = info.get("level", "Белгісіз")
-            region = info.get("region", "Белгісіз")
-            likes = info.get("likes", "0")
-            created_at = info.get("createAt", "Белгісіз")
+        # Нәтижені тексеру
+        if res.get("status") == "success" or "basicInfo" in res or "AccountName" in res:
+            # Әртүрлі API форматына лайықтап алу
+            info = res.get("basicInfo", res)
+            nickname = info.get("nickname") or info.get("AccountName") or "Белгісіз"
+            level = info.get("level") or info.get("AccountLevel") or "Белгісіз"
+            region = info.get("region") or info.get("AccountRegion") or "Белгісіз"
+            likes = info.get("likes") or info.get("AccountLikes") or "0"
+            created_at = info.get("createAt") or info.get("AccountCreateTime") or "Белгісіз"
 
             text = (
                 f"🔥 **Free Fire Аккаунт Инфо:**\n\n"
@@ -72,11 +74,11 @@ def handle_ff_id(message):
             )
             bot.edit_message_text(text, message.chat.id, status_msg.message_id, parse_mode="Markdown")
         else:
-            bot.edit_message_text("❌ Аккаунт табылмады. ID-ді тексеріп кайта жіберіңіз!", message.chat.id, status_msg.message_id)
+            bot.edit_message_text("❌ Аккаунт табылмады. ID-ді тексеріп қайта жіберіңіз!", message.chat.id, status_msg.message_id)
 
     except Exception as e:
         print(f"FF API Қатесі: {e}")
-        bot.edit_message_text("⚠️ Серверде қателік болды немесе бұл ID табылмады.", message.chat.id, status_msg.message_id)
+        bot.edit_message_text("⚠️ Серверде қателік болды немесе бұл ID бойынша дерек табылмады.", message.chat.id, status_msg.message_id)
 
 # Басқа мәтіндерге жауап
 @bot.message_handler(func=lambda message: True)
@@ -94,3 +96,4 @@ if __name__ == '__main__':
         except Exception as e:
             print(f"Polling қатесі: {e}")
             time.sleep(3)
+    
